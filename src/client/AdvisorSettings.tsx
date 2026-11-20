@@ -1,7 +1,7 @@
 /**
  * AdvisorSettings —— 顾问模式设置卡片（client 半）。
  *
- * 数据通道：host 半 /api/dsh-advisor-mode（src/api.ts）——
+ * 数据通道：host 半 /api/dsh-mastermind（src/api.ts）——
  *   GET  ?view=settings → { config（生效值）, locked（组合层锁）, catalog, file }
  *   POST {config}       → 白名单校验 → 写用户层 → 活应用
  * 组合层（cordis.patch.yml）显式写死的字段渲染为禁用，提示去 patch 改。
@@ -54,7 +54,7 @@ export function AdvisorSettings() {
   const [saving, setSaving] = useState(false)
   useEffect(() => {
     const abort = new AbortController()
-    void fetch('/api/dsh-advisor-mode?view=settings', { credentials: 'same-origin', cache: 'no-store', signal: abort.signal })
+    void fetch('/api/dsh-mastermind?view=settings', { credentials: 'same-origin', cache: 'no-store', signal: abort.signal })
       .then(async res => { if (!res.ok) throw new Error('HTTP ' + res.status); const p = await res.json() as SettingsPayload; setPayload(p); setDraft(p.config) })
       .catch(e => { if (!abort.signal.aborted) setError(e instanceof Error ? e.message : String(e)) })
     return () => abort.abort()
@@ -69,7 +69,7 @@ export function AdvisorSettings() {
   const patchSub = (s: 'trigger' | 'guards', k: string, v: number) => setDraft({ ...draft, [s]: { ...draft[s], [k]: v } })
   const save = () => {
     setSaving(true); setError(undefined); setNotice(undefined)
-    void fetch('/api/dsh-advisor-mode', {
+    void fetch('/api/dsh-mastermind', {
       method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ config: draft }),
     }).then(async res => {

@@ -7,7 +7,7 @@
  *     右键清覆盖回落全局；顺带轮询显示本会话顾问 token 消耗。
  *   草稿页（sessionId 无值）→ 全局开关：点击直接翻转 config.enabled
  *     （用户层持久化），让新会话带着选好的状态出生。
- * 数据通道：GET/POST /api/dsh-advisor-mode（host 半 src/api.ts）。
+ * 数据通道：GET/POST /api/dsh-mastermind（host 半 src/api.ts）。
  */
 import { useEffect, useRef, useState } from 'react'
 
@@ -40,7 +40,7 @@ export function AdvisorDock({ sessionId }: { sessionId?: string }) {
     let dead = false
     if (draft) {
       // 草稿页：读全局开关 + enabled 是否被组合层锁死
-      void fetch('/api/dsh-advisor-mode?view=settings', { credentials: 'same-origin', cache: 'no-store' })
+      void fetch('/api/dsh-mastermind?view=settings', { credentials: 'same-origin', cache: 'no-store' })
         .then(async res => {
           if (!res.ok) throw new Error('HTTP ' + res.status)
           const p = await res.json() as { config: { enabled: boolean }, locked: string[] }
@@ -53,7 +53,7 @@ export function AdvisorDock({ sessionId }: { sessionId?: string }) {
     }
     const tick = () => {
       const mine = ++seq.current
-      void fetch('/api/dsh-advisor-mode?view=session&session=' + encodeURIComponent(sessionId), { credentials: 'same-origin', cache: 'no-store' })
+      void fetch('/api/dsh-mastermind?view=session&session=' + encodeURIComponent(sessionId), { credentials: 'same-origin', cache: 'no-store' })
         .then(async res => {
           if (!res.ok) throw new Error('HTTP ' + res.status)
           const p = await res.json() as SessionPayload
@@ -71,7 +71,7 @@ export function AdvisorDock({ sessionId }: { sessionId?: string }) {
     setBusy(true)
     const next = !(data?.enabled ?? false)
     if (draft) {
-      void fetch('/api/dsh-advisor-mode', {
+      void fetch('/api/dsh-mastermind', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ config: { enabled: next } }),
@@ -85,7 +85,7 @@ export function AdvisorDock({ sessionId }: { sessionId?: string }) {
       }).catch(() => {}).finally(() => setBusy(false))
       return
     }
-    void fetch('/api/dsh-advisor-mode?scope=session', {
+    void fetch('/api/dsh-mastermind?scope=session', {
       method: 'POST', credentials: 'same-origin',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ session: { id: sessionId!, enabled: next } }),
@@ -100,7 +100,7 @@ export function AdvisorDock({ sessionId }: { sessionId?: string }) {
   const clearOverride = (e: { preventDefault(): void }) => {
     e.preventDefault()
     if (draft) return
-    void fetch('/api/dsh-advisor-mode?scope=session', {
+    void fetch('/api/dsh-mastermind?scope=session', {
       method: 'POST', credentials: 'same-origin',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ session: { id: sessionId!, enabled: null } }),

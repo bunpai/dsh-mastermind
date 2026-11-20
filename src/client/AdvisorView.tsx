@@ -5,7 +5,7 @@
  * 第四个视图，label '顾问'。展示本会话顾问的调用计数、token 消耗
  * 与事件流（plan/followup/consult 每次裁决、抑制原因、错误）。
  *
- * 数据：GET /api/dsh-advisor-mode?view=session&session=<id>，3s 轮询；
+ * 数据：GET /api/dsh-mastermind?view=session&session=<id>，3s 轮询；
  * 源文件是 host 半写的 ~/.dsh/advisor/<session>.jsonl 审计日志。
  */
 import { useEffect, useRef, useState } from 'react'
@@ -64,7 +64,7 @@ export function AdvisorView({ sessionId }: { sessionId?: string }) {
     let dead = false
     const tick = () => {
       const mine = ++seq.current
-      void fetch('/api/dsh-advisor-mode?view=session&session=' + encodeURIComponent(sessionId), { credentials: 'same-origin', cache: 'no-store' })
+      void fetch('/api/dsh-mastermind?view=session&session=' + encodeURIComponent(sessionId), { credentials: 'same-origin', cache: 'no-store' })
         .then(async res => {
           if (!res.ok) throw new Error('HTTP ' + res.status)
           const p = await res.json() as SessionPayload
