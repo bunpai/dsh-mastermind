@@ -1,0 +1,29 @@
+# dshx 插件描述文件（对齐 fusion-next 包装标准）。
+id: dsh-advisor-mode
+entry: src/index.ts
+marker: "[dsh-advisor-mode] loaded"
+kind: client
+profile: web
+hotReload:
+  artifacts:
+    - src/index.ts
+    - src/config.ts
+    - src/schema.ts
+    - src/signals.ts
+    - src/trigger.ts
+    - src/guards.ts
+    - src/advisor.ts
+    - src/history.ts
+    - src/inject.ts
+    - src/tools.ts
+    - src/prompts.ts
+    - src/plan.ts
+    - src/audit.ts
+    - src/user-config.ts
+    - src/api.ts
+    - src/patch-locks.ts
+    - src/session-stats.ts
+    - src/client/index.ts
+    - src/client/AdvisorSettings.tsx
+    - src/client/AdvisorDock.tsx
+    - src/client/AdvisorView.tsx
