@@ -23,7 +23,7 @@ import { Trigger, type TriggerDecision } from './trigger.js'
 import { AdmissionGate, describeSuppression } from './guards.js'
 import { describeFailure, type FailureRecord } from './signals.js'
 import { callAdvisor, resolveAdvisorReply } from './advisor.js'
-import { ADVISOR_SYSTEM_PROMPT, FOLLOWUP_NUDGE, buildInterventionText } from './prompts.js'
+import { pickPrompts } from './prompts.js'
 import { snapshotFor } from './history.js'
 import { deliverAdvice } from './inject.js'
 import { appendAudit } from './audit.js'
@@ -162,7 +162,8 @@ export async function runFollowup(
       return false
     }
     // 预算随行（Anthropic 技巧，设计 §1）+ 压制回执（设计 §5：换措辞绕闸无意义）
-    const pieces = [FOLLOWUP_NUDGE + failuresBlock(decision.failures)]
+    const ps = pickPrompts(config.promptLanguage)
+    const pieces = [ps.followupNudge + failuresBlock(decision.failures)]
     if (state.lastSuppression !== undefined) {
       pieces.push(`\n\nReceipt for your previous advice: the admission gate suppressed it — ${state.lastSuppression}. Only resubmit advice that is materially different or at strictly higher severity.`)
     }
@@ -174,7 +175,7 @@ export async function runFollowup(
       ...(state.planText === undefined ? {} : { planText: state.planText }),
     })]
     const outcome = await resolveAdvisorReply(retryNote =>
-      callAdvisor(ctx, selection, ADVISOR_SYSTEM_PROMPT, messages, { sessionId: agent.id, retryNote }))
+      callAdvisor(ctx, selection, ps.advisorSystem, messages, { sessionId: agent.id, retryNote }))
     if (!outcome.ok) {
       await appendAudit({ time: new Date().toISOString(), session: agent.id, kind: 'followup', advisor: selectionLabel(selection), verdict: 'error', errorMessage: outcome.errorMessage, failures: [...decision.failures] })
       return false
@@ -193,7 +194,7 @@ export async function runFollowup(
       await appendAudit({ time: new Date().toISOString(), session: agent.id, kind: 'followup', advisor: selectionLabel(selection), verdict: reply.kind, severity: reply.severity, delivered: false, suppressedReason: admission.reason, detail: reply.detail.slice(0, 400), ...usage })
       return false
     }
-    const text = buildInterventionText(reply.kind, reply.detail)
+    const text = ps.interventionText(reply.kind, reply.detail)
     const summary = reply.kind === 'STOP' ? `顾问叫停：${reply.detail.slice(0, 90)}` : `顾问纠偏：${reply.detail.slice(0, 90)}`
     const delivered = deliverAdvice(agent, reply.kind, text, summary)
     if (!delivered) {

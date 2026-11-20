@@ -14,7 +14,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { selectionLabel } from './config.js'
 import { callAdvisor, resolveAdvisorReply } from './advisor.js'
-import { ADVISOR_SYSTEM_PROMPT, PLAN_NUDGE, buildPlanText } from './prompts.js'
+import { pickPrompts } from './prompts.js'
 import { snapshotFor } from './history.js'
 import { deliverAdvice } from './inject.js'
 import { appendAudit } from './audit.js'
@@ -32,10 +32,12 @@ export async function runOpeningPlan(
   if (!config.enabled || !config.plan) return
   const selection = registry.selection(state)
   if (selection === undefined) return
+  const ps = pickPrompts(config.promptLanguage)
+  const nudge = config.planMode === 'every' ? ps.planNudgeEvery : ps.planNudge
   try {
-    const messages = [snapshotFor(agent, { question: PLAN_NUDGE, recent: 8 })]
+    const messages = [snapshotFor(agent, { question: nudge, recent: 8 })]
     const outcome = await resolveAdvisorReply(retryNote =>
-      callAdvisor(ctx, selection, ADVISOR_SYSTEM_PROMPT, messages, { sessionId: agent.id, retryNote }))
+      callAdvisor(ctx, selection, ps.advisorSystem, messages, { sessionId: agent.id, retryNote }))
     if (!outcome.ok) {
       // 计划失败 → 无计划继续跑（设计 §2 铁则）
       await appendAudit({ time: new Date().toISOString(), session: agent.id, kind: 'plan', advisor: selectionLabel(selection), verdict: 'error', errorMessage: outcome.errorMessage })
@@ -47,7 +49,7 @@ export async function runOpeningPlan(
       await appendAudit({ time: new Date().toISOString(), session: agent.id, kind: 'plan', advisor: selectionLabel(selection), verdict: reply.kind, delivered: false })
       return
     }
-    const text = buildPlanText(reply.detail)
+    const text = ps.planText(reply.detail)
     const summary = `开场计划：${reply.detail.slice(0, 90)}`
     const delivered = deliverAdvice(agent, 'PLAN', text, summary)
     if (delivered) state.planText = reply.detail

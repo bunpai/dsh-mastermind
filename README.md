@@ -2,7 +2,7 @@
 
 一句话：Worker（执行模型）主导干活；只在卡点时请教顾问（Advisor，一个更强的模型）。三条介入点：
 
-1. **开场计划**（plan）：会话**首个工具结果提交时**，顾问产出 3–6 步开工计划，以 PLAN 通知注入（触发点在 tools/result 而非 agent/request：后者时机上任务消息尚未提交进历史，顾问看不到任务原文，只能产通用套路计划——实测教训）。代价：纯文本零工具的 turn 拿不到开场计划。
+1. **开场计划**（plan）：会话**首个工具结果提交时**，顾问产出 3–6 步开工计划，以 PLAN 通知注入（触发点在 tools/result 而非 agent/request：后者时机上任务消息尚未提交进历史，顾问看不到任务原文，只能产通用套路计划——实测教训）。代价：纯文本零工具的 turn 拿不到开场计划。`planMode=every` 时该轮改为每条用户消息问一次（仍锚定 tools/result 时机，纯聊天轮不触发、不烧顾问）。
 2. **卡点 followup**（followup）：工具结果流水线检测到失败积压（连续 3 次，或 10 步窗口内 4 次）→ 顾问裁决 CONTINUE / ADJUST / STOP（STOP 经 steer 打断转交用户，不硬取消）。
 3. **consult_advisor 工具**（consult）：Worker 遇到拿不准的地方可随时主动咨询，自带“何时用/何时不用”纪律。
 
@@ -34,6 +34,8 @@
 |---|---|---|
 | enabled | true | 总开关 |
 | plan / followup / consult | true | 三介入点各自开关 |
+| planMode | once | 计划注入时机：`once` 每会话开场一次；`every` 每条用户消息的那轮首个工具结果时都注入一次新计划 |
+| promptLanguage | zh | 顾问系统提示与注入文案语言：`zh` 中文 / `en` 英文（裁决关键词 CONTINUE/ADJUST/STOP 恒为英文，是机器解析契约） |
 | trigger.consecutive | 3 | 连续失败阈值（stuck） |
 | trigger.windowSize / trigger.windowFires | 10 / 4 | 滑窗困境阈值（struggling） |
 | trigger.cooldown | 0 | fire 后静默步数 |

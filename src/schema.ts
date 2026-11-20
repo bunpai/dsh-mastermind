@@ -22,9 +22,11 @@ const guards = Schema.object({
 
 export const ConfigSchema = Schema.object({
   enabled: Schema.boolean().default(DEFAULT_CONFIG.enabled).description('顾问模式总开关'),
-  plan: Schema.boolean().default(DEFAULT_CONFIG.plan).description('介入点①开场计划'),
+  plan: Schema.boolean().default(DEFAULT_CONFIG.plan).description('介入点①计划'),
+  planMode: Schema.union(['once', 'every']).default(DEFAULT_CONFIG.planMode).description('计划注入时机：once=每会话一次 every=每次用户消息'),
   followup: Schema.boolean().default(DEFAULT_CONFIG.followup).description('介入点②卡点自动介入'),
   consult: Schema.boolean().default(DEFAULT_CONFIG.consult).description('介入点③consult_advisor 工具'),
+  promptLanguage: Schema.union(['zh', 'en']).default(DEFAULT_CONFIG.promptLanguage).description('顾问提示词语言（裁决关键词仍是英文契约）'),
   trigger: trigger.default(DEFAULT_CONFIG.trigger),
   guards: guards.default(DEFAULT_CONFIG.guards),
   advisorProvider: Schema.string().default('').description('顾问 provider（空=会话当前模型）'),

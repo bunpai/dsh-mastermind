@@ -20,12 +20,9 @@ import type { AgentRuntime, RuntimeRegistry } from './runtime.js'
 import { snapshotFor } from './history.js'
 import { appendAudit } from './audit.js'
 import {
-  ADVISOR_SYSTEM_PROMPT,
-  CONSULT_TOOL_DESCRIPTION,
   CONSULT_TOOL_NAME,
-  FALLBACK_ADVICE,
-  MSG_BUDGET_EXHAUSTED,
   MSG_NO_AGENT_SCOPE,
+  pickPrompts,
 } from './prompts.js'
 
 /** 工具结果信封：成功带建议文本（预算尾注），失败带可读错误 */
@@ -68,7 +65,7 @@ export function createConsultTool(
 ) {
   return defineTool({
     name: CONSULT_TOOL_NAME,
-    description: CONSULT_TOOL_DESCRIPTION,
+    description: pickPrompts(getConfig().promptLanguage).consultDescription,
     // dsh-tools rc.5 契约：parameters 是 per-property spec map（每项自带
     // type/description/required），defineTool 自动包 object 根——不是标准
     // JSON Schema 形状（写 {type:'object',properties,required[]} 会报
@@ -122,19 +119,19 @@ export function createConsultTool(
       }
       // 会话预算（设计 §6：注入总上限同值，默认 32）：超了不调顾问，回固定提示继续干
       if (state.consultLeft <= 0) {
-        return { ok: true, advisorModel: '(budget)', guidance: MSG_BUDGET_EXHAUSTED, consultationsLeft: 0 } satisfies ConsultValue
+        return { ok: true, advisorModel: '(budget)', guidance: pickPrompts(getConfig().promptLanguage).budgetExhausted, consultationsLeft: 0 } satisfies ConsultValue
       }
       const question = typeof args.question === 'string' && args.question.trim() !== ''
         ? args.question
         : '(executor 未写明问题——依据最近对话给出最合适的建议。)'
       const selection = registry.selection(state)
       if (selection === undefined) {
-        return { ok: false, advisorModel: '(unresolved)', errorMessage: FALLBACK_ADVICE } satisfies ConsultValue
+        return { ok: false, advisorModel: '(unresolved)', errorMessage: pickPrompts(getConfig().promptLanguage).fallbackAdvice } satisfies ConsultValue
       }
 
       const snapshot = snapshotFor(agent, { question: buildQuestion(question, args.context), recent: 20 })
       const outcome = await resolveAdvisorReply(retryNote =>
-        callAdvisor(ctx, selection, ADVISOR_SYSTEM_PROMPT, [snapshot], {
+        callAdvisor(ctx, selection, pickPrompts(getConfig().promptLanguage).advisorSystem, [snapshot], {
           sessionId: agent.id,
           signal: exec.signal,
           retryNote,
@@ -142,7 +139,7 @@ export function createConsultTool(
       if (!outcome.ok) {
         // 咨询失败 → FALLBACK_ADVICE 兜底，Worker 继续干活（绝不炸 turn）
         await appendAudit({ time: new Date().toISOString(), session: agent.id, kind: 'consult', advisor: selectionLabel(selection), verdict: 'error', errorMessage: outcome.errorMessage })
-        return { ok: false, advisorModel: selectionLabel(selection), errorMessage: FALLBACK_ADVICE } satisfies ConsultValue
+        return { ok: false, advisorModel: selectionLabel(selection), errorMessage: pickPrompts(getConfig().promptLanguage).fallbackAdvice } satisfies ConsultValue
       }
       const reply = outcome.reply
       state.consultLeft -= 1

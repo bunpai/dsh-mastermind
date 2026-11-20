@@ -26,11 +26,19 @@ export type GuardConfig = {
   immunityTurns: number
 }
 
+/** 计划注入时机：once=每会话开场一次（首个 tools/result）；every=每次用户消息（该轮首个 tools/result） */
+export type PlanMode = 'once' | 'every'
+
+/** 顾问与注入文案的语言：zh=中文 en=英文 */
+export type PromptLanguage = 'zh' | 'en'
+
 export type Config = {
   enabled: boolean
   plan: boolean
+  planMode: PlanMode
   followup: boolean
   consult: boolean
+  promptLanguage: PromptLanguage
   trigger: TriggerConfig
   guards: GuardConfig
   advisorProvider: string

@@ -20,7 +20,7 @@ import { composeConfig, readUserConfigSync } from './user-config.js'
 import { maskToLiteralPatch, readPatchLockedPaths } from './patch-locks.js'
 import { wireAdvisorApi } from './api.js'
 import { resultIsFailure, classifyFailure } from './signals.js'
-import { CONSULT_TOOL_NAME, DEFAULT_GUIDELINES } from './prompts.js'
+import { CONSULT_TOOL_NAME, pickPrompts } from './prompts.js'
 import { RuntimeRegistry, flushPendingAdvice, runFollowup } from './runtime.js'
 import { runOpeningPlan } from './plan.js'
 import { createConsultTool } from './tools.js'
@@ -47,7 +47,7 @@ export function apply(ctx: Context, config: Config) {
     return state.config.enabled
   }
 
-  const sectionText = ['## Advisor escalation (advisor-mode)', '', ...DEFAULT_GUIDELINES.map(g => `- ${g}`)].join('\n')
+  const sectionText = () => ['## Advisor escalation (advisor-mode)', '', ...pickPrompts(state.config.promptLanguage).guidelines.map(g => '- ' + g)].join('\n')
 
   // consult 工具 + 升级守则提示段：与 (enabled && consult) 同生同灭
   let registration: (() => void) | undefined
@@ -59,7 +59,7 @@ export function apply(ctx: Context, config: Config) {
     const disposeSection = ctx.systemPrompt.section({
       name: 'advisor-mode-consult',
       order: 550,
-      text: sectionText,
+      text: sectionText(),
     })
     registration = () => {
       disposeTool()
@@ -79,6 +79,9 @@ export function apply(ctx: Context, config: Config) {
         ...(resolved.reasoningEffort === undefined || resolved.reasoningEffort === '' ? {} : { effort: resolved.reasoningEffort }),
       }
       rt.gate.beginTurn()
+      // planMode=every：每条用户消息（每个 turn 起点）重置计划置位，
+      // 该轮首个 tools/result 会重新问一次计划；once 模式不重置。
+      if (state.config.plan && state.config.planMode === 'every') rt.planDone = false
       // 介入点①已移至首个 tools/result（见下）：agent/request 时任务原文
       // 尚未提交进历史，顾问只能拿到无任务的空面；首个 tools/result 时
       // 任务必然已在 deriveMessages() 可见面里。
