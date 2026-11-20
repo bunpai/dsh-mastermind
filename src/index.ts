@@ -79,9 +79,11 @@ export function apply(ctx: Context, config: Config) {
         ...(resolved.reasoningEffort === undefined || resolved.reasoningEffort === '' ? {} : { effort: resolved.reasoningEffort }),
       }
       rt.gate.beginTurn()
-      // planMode=every：每条用户消息（每个 turn 起点）重置计划置位，
+      // planMode=every：每条用户消息（每个 turn 起点 step=0）重置计划置位，
       // 该轮首个 tools/result 会重新问一次计划；once 模式不重置。
-      if (state.config.plan && state.config.planMode === 'every') rt.planDone = false
+      // 注意 agent/request 每步模型调用都触发，step>0 是 turn 内续步，不能重置，
+      // 否则每个工具结果都重新问计划（实测 bug：开 every 后每步都炸顾问）。
+      if (state.config.plan && state.config.planMode === 'every' && (payload as { step?: number }).step === 0) rt.planDone = false
       // 介入点①已移至首个 tools/result（见下）：agent/request 时任务原文
       // 尚未提交进历史，顾问只能拿到无任务的空面；首个 tools/result 时
       // 任务必然已在 deriveMessages() 可见面里。
