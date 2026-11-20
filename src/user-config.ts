@@ -34,7 +34,7 @@ export function applyLayer(base: Config, layer: Partial<Config> | undefined): Co
   const out: Config = { ...base, trigger: { ...base.trigger }, guards: { ...base.guards } }
   assignDefined(out.trigger, l.trigger)
   assignDefined(out.guards, l.guards)
-  for (const key of ['enabled', 'plan', 'followup', 'consult', 'advisorProvider', 'advisorModel', 'advisorEffort'] as const) {
+  for (const key of ['enabled', 'plan', 'followup', 'consult', 'advisorProvider', 'advisorModel', 'advisorEffort', 'planMode', 'promptLanguage'] as const) {
     const v = l[key]
     if (v !== undefined) (out as Record<string, unknown>)[key] = v
   }
@@ -50,7 +50,7 @@ export function composeConfig(user: Partial<Config>, patch: Partial<Config>): Co
 export function lockedPaths(patch: Partial<Config> | undefined): string[] {
   const l = patch ?? {}
   const out: string[] = []
-  for (const k of ['enabled', 'plan', 'followup', 'consult', 'advisorProvider', 'advisorModel', 'advisorEffort'] as const) {
+  for (const k of ['enabled', 'plan', 'followup', 'consult', 'advisorProvider', 'advisorModel', 'advisorEffort', 'planMode', 'promptLanguage'] as const) {
     if (l[k] !== undefined) out.push(k)
   }
   for (const k of Object.keys(l.trigger ?? {})) out.push('trigger.' + k)

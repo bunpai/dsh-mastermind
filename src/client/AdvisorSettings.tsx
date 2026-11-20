@@ -132,6 +132,19 @@ export function AdvisorSettings() {
         <NumField label='免疫轮数' value={draft.guards.immunityTurns} locked={locked.has('guards.immunityTurns')} onChange={v => patchSub('guards', 'immunityTurns', v)} />
       </div></fieldset>
     </div>
+    <div className='adv-card'>
+      <fieldset><legend>行为</legend>
+        <label>计划注入时机<select disabled={locked.has('planMode')} value={draft.planMode} onChange={e => patch('planMode', e.target.value)}>
+          <option value='once'>每会话开场一次</option>
+          <option value='every'>每条用户消息都注入</option>
+        </select></label>
+        <label>提示词语言<select disabled={locked.has('promptLanguage')} value={draft.promptLanguage} onChange={e => patch('promptLanguage', e.target.value)}>
+          <option value='zh'>中文</option>
+          <option value='en'>English</option>
+        </select></label>
+        {locked.has('planMode') || locked.has('promptLanguage') ? <p className='adv-note'>该项被插件组合层（cordis.patch.yml）锁定，到 patch 里改。</p> : null}
+      </fieldset>
+    </div>
     <div className='adv-actions'>
       <button disabled={saving} onClick={save}>{saving ? '保存中…' : '保存'}</button>
       {notice !== undefined ? <p className='adv-note'>{notice}</p> : null}
