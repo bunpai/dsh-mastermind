@@ -25,6 +25,8 @@
 - **DSH Studio 桌面**市场路径照旧可用；发布包必须已含 lib/（本仓库已构建）。装完重启生效。
 -`~/.dsh/plugins/<name>/` 只是状态/记录目录；插件代码真正通过 profile workspace（~/.dsh/profiles/*）依赖注入 + `cordis.patch.yml` 的 bundle.patch 打入宿主。
 - `dshx.yml` 是 dshx 开发工具的 manifest，**宿主运行时不读它**——保留无害，但别把它当宿主必需。
+- **2026-11-20 github: 真装踩坑记录**（DSH 宿主侧，与本插件无关但会撞上）：①安装器调 corepack pnpm 时写死 `bin/pnpm.cjs`，pnpm≥12 已改为 `pnpm.mjs`，git 安装会报 `MODULE_NOT_FOUND …/pnpm/12.x/bin/pnpm.cjs`——临时解法是往该目录软链一个可用的 pnpm.cjs，或等宿主修复；②`dsh plugin add` 只做 pnpm 安装，bundles/patch 接线由插件管理器在 profile 启动/市场安装流程里 reconcile 自动完成（bundle 依赖会自动补进 `dsh.profile.bundles`），装完重启即生效，无需手工接线。
+- **import 注意**：插件代码引 `@deepseek-ai/schemastery`（scoped），不是裸 `schemastery`——运行时解析表只路由安装声明的包名。
 
 ## 配置（三层合成：schema 默认 → 用户层 → 组合层 patch 胜出）
 
