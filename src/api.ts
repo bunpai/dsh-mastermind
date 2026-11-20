@@ -89,6 +89,13 @@ function sanitizeUserConfig(raw: Record<string, unknown>, locked: Set<string>): 
     if (typeof v !== 'string' || v.length > 128 || locked.has(k)) { ignored.push(k); continue }
     user[k] = v
   }
+  const ENUM_KEYS = { planMode: ['once', 'every'], promptLanguage: ['zh', 'en'] } as const
+  for (const k of Object.keys(ENUM_KEYS) as (keyof typeof ENUM_KEYS)[]) {
+    const v = raw[k]
+    if (v === undefined) continue
+    if (typeof v !== 'string' || !(ENUM_KEYS[k] as readonly string[]).includes(v) || locked.has(k)) { ignored.push(k); continue }
+    user[k] = v as Config[typeof k]
+  }
   const numbers = (section: 'trigger' | 'guards', bounds: Record<string, [number, number]>) => {
     const src = raw[section]
     if (src === undefined) return
