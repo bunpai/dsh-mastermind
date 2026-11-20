@@ -1,5 +1,5 @@
 /**
- * dsh-advisor-mode —— 顾问模式插件（host 半入口）。
+ * dsh-mastermind —— 顾问模式插件（host 半入口）。
  *
  * 机制（设计定稿 §1–§7）：小模型主导干活，卡点才问大模型顾问——
  *   介入点① 开场计划：会话首个请求问一次顾问要 plan（config.plan）
@@ -26,7 +26,7 @@ import { runOpeningPlan } from './plan.js'
 import { createConsultTool } from './tools.js'
 import { ConfigSchema } from './schema.js'
 
-export const name = 'dsh-advisor-mode'
+export const name = 'dsh-mastermind'
 export const inject = ['tools', 'llm', 'systemPrompt']
 export { ConfigSchema as Config }
 
@@ -83,7 +83,7 @@ export function apply(ctx: Context, config: Config) {
       // 尚未提交进历史，顾问只能拿到无任务的空面；首个 tools/result 时
       // 任务必然已在 deriveMessages() 可见面里。
     } catch (error) {
-      console.warn('[dsh-advisor-mode] agent/request 处理失败：', error)
+      console.warn('[dsh-mastermind] agent/request 处理失败：', error)
     }
     return resolved
   })
@@ -115,16 +115,16 @@ export function apply(ctx: Context, config: Config) {
       ])
       if (decision.fired) void runFollowup(ctx, agentScoped, registry, decision)
     } catch (error) {
-      console.warn('[dsh-advisor-mode] tools/result 处理失败：', error)
+      console.warn('[dsh-mastermind] tools/result 处理失败：', error)
     }
   }, { global: true })
 
-  // 设置卡片后端：webServer 就绪后挂 /api/dsh-advisor-mode（fusion-next 活例）
+  // 设置卡片后端：webServer 就绪后挂 /api/dsh-mastermind（fusion-next 活例）
   wireAdvisorApi(ctx, state, literalPatch, userState, reconcileRegistration, { sessionEnabled, isEnabledFor })
 
   reconcileRegistration()
   const { enabled, plan, followup, consult } = state.config
-  console.log(`[dsh-advisor-mode] 顾问模式已加载：enabled=${enabled} plan=${plan} followup=${followup} consult=${consult}`)
+  console.log(`[dsh-mastermind] 顾问模式已加载：enabled=${enabled} plan=${plan} followup=${followup} consult=${consult}`)
 
   ctx.effect(() => () => {
     disposeRequest()

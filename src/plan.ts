@@ -54,6 +54,6 @@ export async function runOpeningPlan(
     else queueAdvice(state, { kind: 'PLAN', text, summary })
     await appendAudit({ time: new Date().toISOString(), session: agent.id, kind: 'plan', advisor: selectionLabel(selection), verdict: reply.kind, delivered, queued: !delivered, detail: reply.detail.slice(0, 400), ...usage })
   } catch (error) {
-    console.warn('[dsh-advisor-mode] 开场计划失败（已降级为无计划）：', error)
+    console.warn('[dsh-mastermind] 开场计划失败（已降级为无计划）：', error)
   }
 }

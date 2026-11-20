@@ -206,7 +206,7 @@ export async function runFollowup(
       parseRetries: reply.parseRetries, fellBack: reply.fellBack, detail: reply.detail.slice(0, 400), ...usage })
     return delivered
   } catch (error) {
-    console.warn('[dsh-advisor-mode] 卡点介入流程异常（已降级为未触发）：', error)
+    console.warn('[dsh-mastermind] 卡点介入流程异常（已降级为未触发）：', error)
     return false
   } finally {
     state.inFlight = false

@@ -79,7 +79,7 @@ interface StreamChunk {
   readonly type?: string
   readonly text?: string
   readonly usage?: { inputTokens?: number, outputTokens?: number }
-  readonly reason?: { kind?: string, failure?: string }
+  readonly reason?: { kind?: string, failure?: unknown }
 }
 
 /**
@@ -124,7 +124,16 @@ export async function callAdvisor(
           sawFinish = true
           const kind = chunk.reason?.kind ?? 'stop'
           if (kind === 'aborted' || kind === 'error') {
-            return { ok: false, errorMessage: `顾问流式返回异常终局（${kind}）：${chunk.reason?.failure ?? ''}` }
+            const failure = chunk.reason?.failure
+            const failureText = typeof failure === 'string'
+              ? failure
+              : failure instanceof Error
+                ? (failure.stack ?? failure.message)
+                : failure === undefined || failure === null
+                  ? ''
+                  : JSON.stringify(failure)
+            const suffix = failureText === '' ? '' : `：${failureText}`
+            return { ok: false, errorMessage: `顾问流式返回异常终局（${kind}）${suffix}` }
           }
           finishKind = kind
         }

@@ -1,7 +1,7 @@
 # dshx 插件描述文件（对齐 fusion-next 包装标准）。
-id: dsh-advisor-mode
+id: dsh-mastermind
 entry: src/index.ts
-marker: "[dsh-advisor-mode] loaded"
+marker: "[dsh-mastermind] loaded"
 kind: client
 profile: web
 hotReload:

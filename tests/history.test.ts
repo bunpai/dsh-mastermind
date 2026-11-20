@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildSnapshot, findTaskOriginal, renderTranscript, snapshotFor } from '../src/history.js'
 
 type Msg = Record<string, unknown>
-const user = (text: string, plugin = false): Msg => ({ role: 'user', content: [{ type: 'text', text }], source: { kind: plugin ? 'plugin:dsh-advisor-mode' : 'user' } })
+const user = (text: string, plugin = false): Msg => ({ role: 'user', content: [{ type: 'text', text }], source: { kind: plugin ? 'plugin:dsh-mastermind' : 'user' } })
 const assistant = (text: string): Msg => ({ role: 'assistant', content: [{ type: 'text', text }] })
 
 describe('history 顾问请求自包含（设计 §6/§9）', () => {

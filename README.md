@@ -1,4 +1,4 @@
-# dsh-advisor-mode — DSH「顾问模式」插件（原型 v0.1.0）
+# dsh-mastermind — DSH「顾问模式」插件（原型 v0.1.0）
 
 一句话：Worker（执行模型）主导干活；只在卡点时请教顾问（Advisor，一个更强的模型）。三条介入点：
 
@@ -18,8 +18,8 @@
 
 ## 安装（本机实测地面真值，2026-11-19 官方安装器真装验证）
 
-- **CLI 安装（含本地路径，已验证）**：`dsh plugin --profile <name> add github:bunpai/dsh-mastermind`（本地路径 `dsh plugin --profile <name> add ./dsh-advisor-mode` 亦可，实测输出 `+ dsh-advisor-mode link:…` 通过）。
-- **仓库名说明**：GitHub 仓库叫 `dsh-mastermind`（“军师”的俏皮说法），但包名/插件 id 仍是 `dsh-advisor-mode`——安装后 DSH 里显示 `dsh-advisor-mode`，两者不冲突。
+- **CLI 安装（含本地路径，已验证）**：`dsh plugin --profile <name> add github:bunpai/dsh-mastermind`（本地路径 `dsh plugin --profile <name> add ./dsh-mastermind` 亦可，实测输出 `+ dsh-mastermind link:…` 通过）。
+- **仓库名说明**：GitHub 仓库叫 `dsh-mastermind`（“军师”的俏皮说法），但包名/插件 id 仍是 `dsh-mastermind`——安装后 DSH 里显示 `dsh-mastermind`，两者不冲突。
 - 安装器的真实接线（与早期说法不同，以此为准）：写入 profile 的 **package.json dependencies（本地路径为 link: 符号链接协议）** + **dsh.profile.bundles 数组追加插件名**（ bundles 数组就是挂载清单，`.plugin-manager` 只是日志）。插件本体经由插件的 bundle.patch（cordis.patch.yml 的 insert 条目）注入宿主。
 - **本地路径 link: 安装的依赖解析注意**：Node 从符号链接真实路径向上解析模块，插件运行时的 peer 依赖（@deepseek-ai/dsh-llm、@deepseek-ai/dsh-tools、schemastery）找不到时，需在插件 node_modules 下补符号链接指向全局 dsh 安装根（本机三链已补，属 link: 安装的固有粗糙处；正常 npm/pnpm 包安装无此问题）。
 - **DSH Studio 桌面**市场路径照旧可用；发布包必须已含 lib/（本仓库已构建）。装完重启生效。
@@ -42,9 +42,9 @@
 | advisorProvider / advisorModel | 空 | 顾问模型；两槽都填才算显式指定，否则回落 Worker 当前模型 |
 | advisorEffort | 空 | 顾问推理力度（模型支持时） |
 
-**GUI 设置卡片（模型入口在这里）**：设置页 →「顾问模式」卡片（src/client/，经 `ctx.slots.inject('settings.section')` 注册，宿主范式照 fusion-next）。卡片提供：启用/三介入点开关、顾问模型下拉（实时拉取宿主模型目录、按 provider 分组、空值=跟随执行模型）、推理强度下拉（随所选模型的 efforts 动态出现）、触发阈值与护栏数值域。被组合层 patch 显式写死的键在卡片里显示「锁定」禁用态。保存 → POST /api/dsh-advisor-mode → 写用户层文件 `$HOME/.dsh/advisor/settings.json`（与审计 JSONL 同目录）并即时生效，无需重启。
+**GUI 设置卡片（模型入口在这里）**：设置页 →「顾问模式」卡片（src/client/，经 `ctx.slots.inject('settings.section')` 注册，宿主范式照 fusion-next）。卡片提供：启用/三介入点开关、顾问模型下拉（实时拉取宿主模型目录、按 provider 分组、空值=跟随执行模型）、推理强度下拉（随所选模型的 efforts 动态出现）、触发阈值与护栏数值域。被组合层 patch 显式写死的键在卡片里显示「锁定」禁用态。保存 → POST /api/dsh-mastermind → 写用户层文件 `$HOME/.dsh/advisor/settings.json`（与审计 JSONL 同目录）并即时生效，无需重启。
 
-**会话级开关 + 顾问活动页（对话界面内）**：输入框右侧、与模型选择器同排有「顾问」药丸（src/client/AdvisorDock.tsx，经 `conversation.input.right` 槽位注册——该槽位草稿页与活跃会话页都挂载，因此**新建会话时就能先选要不要顾问**；草稿本身携带真会话 id，覆盖随会话出生自动生效）——点击即对**当前会话**单独开/关顾问（进程内存覆盖，不影响其他会话与全局设置；右键清覆盖回落全局），药丸上顺带显示本会话顾问 token 消耗（3s 轮询）。对话/轨迹旁的第三个 tab「顾问」（src/client/AdvisorView.tsx，经 `conversation.view` 注册）展示本会话顾问活动：调用次数、输入/输出 token 汇总、按介入类型分桶，以及事件流（时间/类型/裁决/顾问模型/抑制原因/每次的 token 数）。数据源=审计 JSONL 经 `GET /api/dsh-advisor-mode?view=session&session=<id>` 聚合；开关写 `POST ?scope=session {session:{id,enabled:boolean|null}}`。
+**会话级开关 + 顾问活动页（对话界面内）**：输入框右侧、与模型选择器同排有「顾问」药丸（src/client/AdvisorDock.tsx，经 `conversation.input.right` 槽位注册——该槽位草稿页与活跃会话页都挂载，因此**新建会话时就能先选要不要顾问**；草稿本身携带真会话 id，覆盖随会话出生自动生效）——点击即对**当前会话**单独开/关顾问（进程内存覆盖，不影响其他会话与全局设置；右键清覆盖回落全局），药丸上顺带显示本会话顾问 token 消耗（3s 轮询）。对话/轨迹旁的第三个 tab「顾问」（src/client/AdvisorView.tsx，经 `conversation.view` 注册）展示本会话顾问活动：调用次数、输入/输出 token 汇总、按介入类型分桶，以及事件流（时间/类型/裁决/顾问模型/抑制原因/每次的 token 数）。数据源=审计 JSONL 经 `GET /api/dsh-mastermind?view=session&session=<id>` 聚合；开关写 `POST ?scope=session {session:{id,enabled:boolean|null}}`。
 
 **后端**（src/api.ts + src/patch-locks.ts）：GET ?view=settings 返回 {config 生效值, user 用户层, locked 锁定集, catalog 模型目录, file}；POST 白名单校验（布尔/字符串≤128/整数边界）+ 剥锁定键 → 写盘 → 活应用。另两支会话端面：`GET ?view=session&session=<id>` 聚合审计 JSONL（事件尾部 50 + token 汇总 + 开关态），`POST ?scope=session` 写 sessionEnabled 覆盖表（index.ts 的 isEnabledFor 闸被 tools/result 与 consult 共用）。本机回源守卫 + 64KB 上限。**锁定集真值**：cordis 会把 ConfigSchema 默认补齐后才传进 apply()，因此字面锁只能从 patch 文件本身读——readPatchLockedPaths() 扫插件包根 cordis.patch.yml + $DSH_HOME/profiles/<--profile>/cordis.patch.yml 中本插件的 config 块（缩进解析，无 yaml 依赖），compose 也用裁过的 literalPatch，否则 schema 默认会遮蔽用户层。
 

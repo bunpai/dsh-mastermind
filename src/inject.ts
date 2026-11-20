@@ -19,7 +19,7 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import { createUserMessage, type UserMessage } from '@deepseek-ai/dsh-llm'
 
 /** v4 直接生产者来源：插件名编进 kind 前缀 */
-export const ADVICE_SOURCE_KIND = 'plugin:dsh-advisor-mode'
+export const ADVICE_SOURCE_KIND = 'plugin:dsh-mastermind'
 
 const SUMMARY_MAX_CHARS = 120
 
@@ -50,7 +50,7 @@ export function deliverAdvice(agent: Agent, kind: DeliveryKind, text: string, su
     else agent.inject(message)
     return true
   } catch (error) {
-    console.warn('[dsh-advisor-mode] 投递失败（已吞掉）：', error)
+    console.warn('[dsh-mastermind] 投递失败（已吞掉）：', error)
     return false
   }
 }

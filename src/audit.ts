@@ -45,6 +45,6 @@ export async function appendAudit(entry: AuditEntry): Promise<void> {
     const line = `${JSON.stringify(entry)}\n`
     await appendFile(join(dir, `${entry.session}.jsonl`), line, 'utf8')
   } catch (error) {
-    console.warn('[dsh-advisor-mode] 审计写入失败（已吞掉）：', error)
+    console.warn('[dsh-mastermind] 审计写入失败（已吞掉）：', error)
   }
 }

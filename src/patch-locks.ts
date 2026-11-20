@@ -6,7 +6,7 @@
  * 唯一诚实的来源是 patch 文件本身：
  *   ① 插件自带 bundle patch：包根 cordis.patch.yml（import.meta.url 定位）
  *   ② profile patch：$DSH_HOME/profiles/<--profile 参数>/cordis.patch.yml
- * 两份里 dsh-advisor-mode 的 config: 块显式出现的叶子路径即锁定集。
+ * 两份里 dsh-mastermind 的 config: 块显式出现的叶子路径即锁定集。
  * 不引 yaml 依赖：对块级 2 层嵌套做缩进扫描（本插件 patch 面足够规整）。
  */
 
@@ -93,7 +93,7 @@ function profilePatchPath(): string | undefined {
 }
 
 /** 两份 patch 中本插件 config 显式叶子路径的并集（找不到文件 → 该层无锁） */
-export function readPatchLockedPaths(pluginId = 'dsh-advisor-mode'): string[] {
+export function readPatchLockedPaths(pluginId = 'dsh-mastermind'): string[] {
   const paths = new Set<string>()
   for (const file of [pluginPatchPath(), profilePatchPath()]) {
     if (file === undefined) continue

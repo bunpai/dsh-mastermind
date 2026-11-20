@@ -26,7 +26,7 @@ function loadDep(name) {
   for (const candidate of candidates) {
     try { return require(candidate) } catch {}
   }
-  throw new Error('[dsh-advisor-mode] ' + name + ' 不可用：请在插件目录 npm install，或保留同仓 fusion-next-source-review 目录。')
+  throw new Error('[dsh-mastermind] ' + name + ' 不可用：请在插件目录 npm install，或保留同仓 fusion-next-source-review 目录。')
 }
 
 const ts = loadDep('typescript')
@@ -83,7 +83,7 @@ const moduleTable = clientModules.map(m =>
 ).join('\n')
 const clientShell = [
   'window.__ModuleLoader__.load({',
-  '  id: "dsh-advisor-mode",',
+  '  id: "dsh-mastermind",',
   '  factory: (hostRequire) => {',
   '    const __modules = {',
   moduleTable,
@@ -114,4 +114,4 @@ await writeFile(path.join(LIB, 'client', 'index.js'), clientShell, 'utf8')
 await writeFile(path.join(LIB, 'client', 'index.d.ts'),
   'export declare const name: string\nexport declare const inject: string[]\nexport declare function apply(ctx: unknown): void\n', 'utf8')
 
-console.log('[dsh-advisor-mode] 构建完成：lib/**（' + jsCount + ' js / ' + dtsCount + ' d.ts；client 半 = ' + clientModules.length + ' 模块进 ModuleLoader 壳）')
+console.log('[dsh-mastermind] 构建完成：lib/**（' + jsCount + ' js / ' + dtsCount + ' d.ts；client 半 = ' + clientModules.length + ' 模块进 ModuleLoader 壳）')
