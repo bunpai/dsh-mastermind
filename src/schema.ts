@@ -3,7 +3,7 @@
  * advisor-mode: 段共用一份形状）。默认值与 DEFAULT_CONFIG 严格同源。
  */
 
-import Schema from 'schemastery'
+import Schema from '@deepseek-ai/schemastery'
 import { DEFAULT_CONFIG } from './config.js'
 
 const trigger = Schema.object({
