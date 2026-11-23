@@ -89,6 +89,8 @@ function structuralMeta(result: Record<string, unknown>): {
 }
 
 const EMPTY_HIT_TEXT = /no (matches|files|results|hits)|0 matches|no match found|未找到|没有(匹配|找到)|not found/i
+/** DSH bash 把非零退出码嵌进结果文本（[stderr]...[exit code: N]），isError 仍 false——必须文本级识别 */
+const EXIT_CODE_TEXT = /\[exit code: (-?\d+)\]/
 const QUOTA_TEXT = /429|too many requests|quota|rate[ -]?limit|配额/i
 const STALE_TEXT = /FS_STALE_VERSION|stale version/i
 const SANDBOX_TEXT = /\[sandbox:|file access denied|access denied under/i
@@ -106,6 +108,8 @@ export function classifyFailure(name: string, argsText: string, result: unknown)
 
   if (meta.exitCode !== undefined && meta.exitCode !== 0) return { name, argsKey: makeArgsKey(name, argsText), label: 'bash-exit' }
   if (meta.timedOut === true) return { name, argsKey: makeArgsKey(name, argsText), label: 'bash-timeout' }
+  const textExit = EXIT_CODE_TEXT.exec(resultText) ?? EXIT_CODE_TEXT.exec(exitCodeHaystack(result))
+  if (textExit !== null && Number.parseInt(textExit[1], 10) !== 0) return { name, argsKey: makeArgsKey(name, argsText), label: 'bash-exit' }
   if (meta.aborted === true) return { name, argsKey: makeArgsKey(name, argsText), label: 'aborted' }
   if (SANDBOX_TEXT.test(resultText)) return { name, argsKey: makeArgsKey(name, argsText), label: 'denied' }
   if (STALE_TEXT.test(resultText)) return { name, argsKey: makeArgsKey(name, argsText), label: 'stale-version' }
@@ -150,8 +154,25 @@ export function describeFailure(record: FailureRecord): string {
   return `${record.label}: ${table[record.label]} [tool=${record.name}]`
 }
 
-/** tools/result 是否算一次失败：宿主真值是 result.isError === true（缺席视为成功） */
+/** 递归收集 result 里所有 text 块（任意嵌套，跳过非字符串），返回头尾采样文本 */
+function exitCodeHaystack(result: unknown, depth = 0): string {
+  if (depth > 4 || result === null || typeof result !== 'object') return typeof result === 'string' ? result.slice(0, 400) + ' ' + result.slice(-400) : ''
+  const chunks: string[] = []
+  const walk = (v: unknown, d: number): void => {
+    if (d > 4 || v === null || v === undefined) return
+    if (typeof v === 'string') { chunks.push(v.slice(0, 300) + ' ' + v.slice(-300)); return }
+    if (Array.isArray(v)) { for (const item of v) walk(item, d + 1); return }
+    if (typeof v === 'object') { for (const item of Object.values(v as Record<string, unknown>)) walk(item, d + 1) }
+  }
+  walk(result, depth)
+  return chunks.join(' ')
+}
+
+/** tools/result 是否算一次失败：isError === true，或文本含非零 [exit code: N]
+ * （DSH bash 非零退出 isError=false 靠文本标记；标记在文本尾部，故走头尾采样） */
 export function resultIsFailure(result: unknown): boolean {
   if (typeof result !== 'object' || result === null) return false
-  return (result as { isError?: unknown }).isError === true
+  if ((result as { isError?: unknown }).isError === true) return true
+  const m = EXIT_CODE_TEXT.exec(exitCodeHaystack(result))
+  return m !== null && Number.parseInt(m[1], 10) !== 0
 }

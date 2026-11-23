@@ -48,4 +48,18 @@ describe('signals 失败分类（设计 §3）', () => {
     expect(text).toContain('grep')
     expect(typeof extractResultText(res({ stdout: 'abc' }))).toBe('string')
   })
+
+  it('DSH bash 文本型 [exit code: N]（isError=false 也算失败）', () => {
+    const real = (code: number) => ({
+      isError: false,
+      content: [{ type: 'text', text: '[stderr]\nTraceback (most recent call last):\n  File "x.py", line 1\n[exit code: ' + code + ']' }],
+    })
+    expect(resultIsFailure(real(1))).toBe(true)
+    expect(resultIsFailure(real(127))).toBe(true)
+    expect(resultIsFailure(real(0))).toBe(false)
+    expect(classifyFailure('bash', '{}', real(1)).label).toBe('bash-exit')
+    // 标记被长输出推到尾部：haystack 采样尾部仍能捕到
+    const long = { isError: false, content: [{ type: 'text', text: 'out '.repeat(2000) + '[exit code: 2]' }] }
+    expect(resultIsFailure(long)).toBe(true)
+  })
 })
