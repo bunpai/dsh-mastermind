@@ -1,6 +1,6 @@
 {
   "name": "dsh-mastermind",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "DSH advisor-mode plugin prototype: small executor model leads, consults a stronger advisor model only at stuck points (opening plan / automatic followup / consult_advisor tool).",
   "type": "module",
   "license": "MIT",
