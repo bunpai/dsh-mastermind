@@ -53,6 +53,8 @@ export interface AgentRuntime {
   readonly gate: AdmissionGate
   planDone: boolean
   planText: string | undefined
+  /** 最近一次 agent/request 看到的 turn 号（planMode=every 轮次边界检测用；不猜 step 编码） */
+  lastRequestTurn: number | undefined
   /** admission 闸压制上一条顾问建议的回执（下一次顾问请求时带给顾问；投递成功即清） */
   lastSuppression: string | undefined
   consultLeft: number
@@ -82,6 +84,7 @@ export class RuntimeRegistry {
       gate: new AdmissionGate(config.guards),
       planDone: false,
       planText: undefined,
+      lastRequestTurn: undefined,
       lastSuppression: undefined,
       consultLeft: config.guards.budgetCap,
       inFlight: false,
