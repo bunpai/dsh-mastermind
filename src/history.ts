@@ -129,7 +129,13 @@ export function renderCheckpoints(checkpoints: readonly Message[], cap: number):
   }
   const joined = texts.join('\n\n')
   if (joined.length <= cap) return joined
-  return `…[earlier checkpoint content dropped to fit budget]…\n${joined.slice(-cap)}`
+  // compaction 摘要结构是"首要意图在顶(## Primary Request and Intent)、近期
+  // 状态在尾"，两头都是高价值区——纯尾优先会把任务意图整个切掉（v0.3.0-rc
+  // 评测实证：6103 字符摘要截到 3000 时 Primary Request 全丢，盐值仅靠运气
+  // 留存）。改为头 60% + 尾 30% 双端保留，与 textOf 截断形态一致。
+  const head = Math.floor(cap * 0.6)
+  const tail = Math.floor(cap * 0.3)
+  return `${joined.slice(0, head)}\n…[checkpoint middle dropped to fit budget]…\n${joined.slice(-tail)}`
 }
 
 export interface SnapshotOptions {
