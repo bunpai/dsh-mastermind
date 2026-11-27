@@ -15,7 +15,7 @@
  *    单块 700 字符预算照裁、滑出尾窗即丢、还会被 findTaskOriginal 误标
  *    成任务原文。此处专项处理：
  *      1. 检查点消息一律从尾窗摘出，进独立的 "Compacted history" 专区
- *         （豁免单块预算，专区总量 maxSummaryChars 封顶，尾优先保最新）；
+ *         （豁免单块预算，专区总量 maxSummaryChars 封顶，头尾双端保留）；
  *      2. 尾窗里原地留一行占位符，保持位置语义可追；
  *      3. findTaskOriginal 跳过检查点源（P2：防摘要误标任务原文）；
  *      4. 有活跃摘要时任务原文预算降级（摘要首节已含用户目标，对冲成本）。
@@ -47,7 +47,10 @@ export interface ContextBudget {
 }
 
 export const DEFAULT_CONTEXT_BUDGET: ContextBudget = {
-  maxSummaryChars: 3000,
+  // 真实 compaction 摘要实测 2659–6103 字符(v3 评测 4 会话); 3000 帽会使
+  // 覆盖率反不如旧版意外的 4000 task 帽(极端扫描 OLD 6/10 vs NEW 4/10)。
+  // 6000 覆盖绝大多数真实摘要全长, 更大size由 payload cap 头尾双端兜底。
+  maxSummaryChars: 6000,
   maxPayloadChars: 12000,
   taskBudgetWithSummary: 800,
   recentMessages: 20,

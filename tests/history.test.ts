@@ -95,7 +95,7 @@ describe('history v0.3.0 compaction 感知', () => {
   })
 
   it('maxSummaryChars 封顶：超大摘要头尾双端保留（顶部意图与尾部状态都不可丢）', () => {
-    const huge = 'HEAD-MARKER ' + 'z'.repeat(5000) + ' TAIL-MARKER'
+    const huge = 'HEAD-MARKER ' + 'z'.repeat(8000) + ' TAIL-MARKER'
     const snap = buildSnapshot([user('t'), checkpoint(huge), assistant('a')] as never, { question: 'q' })
     const text = (snap.content as { text: string }[])[0].text
     const ckptPart = text.split('## Compacted history')[1].split('## Recent')[0]
