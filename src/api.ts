@@ -69,6 +69,7 @@ const BOOL_KEYS = ['enabled', 'plan', 'followup', 'consult'] as const
 const ROUTE_KEYS = ['advisorProvider', 'advisorModel', 'advisorEffort'] as const
 const TRIGGER_BOUNDS: Record<string, [number, number]> = { consecutive: [1, 10], windowSize: [2, 50], windowFires: [1, 20], cooldown: [0, 20], maxInterventions: [0, 10] }
 const GUARD_BOUNDS: Record<string, [number, number]> = { budgetPerTurn: [1, 16], budgetCap: [1, 128], immunityTurns: [0, 10] }
+const CONTEXT_BOUNDS: Record<string, [number, number]> = { maxSummaryChars: [500, 20000], maxPayloadChars: [2000, 60000], taskBudgetWithSummary: [200, 4000], recentMessages: [4, 60], blockChars: [200, 4000] }
 
 interface Sanitized { user: Partial<Config>; ignored: string[] }
 
@@ -96,7 +97,7 @@ function sanitizeUserConfig(raw: Record<string, unknown>, locked: Set<string>): 
     if (typeof v !== 'string' || !(ENUM_KEYS[k] as readonly string[]).includes(v) || locked.has(k)) { ignored.push(k); continue }
     user[k] = v as Config[typeof k]
   }
-  const numbers = (section: 'trigger' | 'guards', bounds: Record<string, [number, number]>) => {
+  const numbers = (section: 'trigger' | 'guards' | 'context', bounds: Record<string, [number, number]>) => {
     const src = raw[section]
     if (src === undefined) return
     if (typeof src !== 'object' || src === null || Array.isArray(src)) { ignored.push(section); return }
@@ -112,6 +113,7 @@ function sanitizeUserConfig(raw: Record<string, unknown>, locked: Set<string>): 
   }
   numbers('trigger', TRIGGER_BOUNDS)
   numbers('guards', GUARD_BOUNDS)
+  numbers('context', CONTEXT_BOUNDS)
   return { user, ignored }
 }
 

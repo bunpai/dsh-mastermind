@@ -129,7 +129,7 @@ export function createConsultTool(
         return { ok: false, advisorModel: '(unresolved)', errorMessage: pickPrompts(getConfig().promptLanguage).fallbackAdvice } satisfies ConsultValue
       }
 
-      const snapshot = snapshotFor(agent, { question: buildQuestion(question, args.context), recent: 20 })
+      const snapshot = snapshotFor(agent, { question: buildQuestion(question, args.context), context: config.context })
       const outcome = await resolveAdvisorReply(retryNote =>
         callAdvisor(ctx, selection, pickPrompts(getConfig().promptLanguage).advisorSystem, [snapshot], {
           sessionId: agent.id,

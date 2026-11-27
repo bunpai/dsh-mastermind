@@ -31,9 +31,10 @@ function assignDefined<T extends object>(target: T, src: Partial<T> | undefined)
 /** 把单层补丁叠到完整配置上（顶层标量 + trigger/guards 深合并） */
 export function applyLayer(base: Config, layer: Partial<Config> | undefined): Config {
   const l = layer ?? {}
-  const out: Config = { ...base, trigger: { ...base.trigger }, guards: { ...base.guards } }
+  const out: Config = { ...base, trigger: { ...base.trigger }, guards: { ...base.guards }, context: { ...base.context } }
   assignDefined(out.trigger, l.trigger)
   assignDefined(out.guards, l.guards)
+  assignDefined(out.context, l.context)
   for (const key of ['enabled', 'plan', 'followup', 'consult', 'advisorProvider', 'advisorModel', 'advisorEffort', 'planMode', 'promptLanguage'] as const) {
     const v = l[key]
     if (v !== undefined) (out as Record<string, unknown>)[key] = v
@@ -55,6 +56,7 @@ export function lockedPaths(patch: Partial<Config> | undefined): string[] {
   }
   for (const k of Object.keys(l.trigger ?? {})) out.push('trigger.' + k)
   for (const k of Object.keys(l.guards ?? {})) out.push('guards.' + k)
+  for (const k of Object.keys(l.context ?? {})) out.push('context.' + k)
   return out
 }
 

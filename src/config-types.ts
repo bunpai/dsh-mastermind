@@ -32,6 +32,20 @@ export type PlanMode = 'once' | 'every'
 /** 顾问与注入文案的语言：zh=中文 en=英文 */
 export type PromptLanguage = 'zh' | 'en'
 
+/** 顾问上下文预算（compaction 感知渲染的护栏，v0.3.0） */
+export type ContextConfig = {
+  /** 压缩检查点专区总字符上限（尾优先保留最新内容） */
+  maxSummaryChars: number
+  /** 整个顾问载荷的字符硬顶 */
+  maxPayloadChars: number
+  /** 有活跃压缩摘要时任务原文的降级字符预算 */
+  taskBudgetWithSummary: number
+  /** 尾窗消息条数 */
+  recentMessages: number
+  /** 单块文本字符预算 */
+  blockChars: number
+}
+
 export type Config = {
   enabled: boolean
   plan: boolean
@@ -41,6 +55,7 @@ export type Config = {
   promptLanguage: PromptLanguage
   trigger: TriggerConfig
   guards: GuardConfig
+  context: ContextConfig
   advisorProvider: string
   advisorModel: string
   advisorEffort: string

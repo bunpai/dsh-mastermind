@@ -174,7 +174,7 @@ export async function runFollowup(
     const question = pieces.join('')
     const messages = [snapshotFor(agent, {
       question,
-      recent: 20,
+      context: config.context,
       ...(state.planText === undefined ? {} : { planText: state.planText }),
     })]
     const outcome = await resolveAdvisorReply(retryNote =>

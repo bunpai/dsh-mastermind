@@ -35,7 +35,7 @@ export async function runOpeningPlan(
   const ps = pickPrompts(config.promptLanguage)
   const nudge = config.planMode === 'every' ? ps.planNudgeEvery : ps.planNudge
   try {
-    const messages = [snapshotFor(agent, { question: nudge, recent: 8 })]
+    const messages = [snapshotFor(agent, { question: nudge, recent: 8, context: config.context })]
     const outcome = await resolveAdvisorReply(retryNote =>
       callAdvisor(ctx, selection, ps.advisorSystem, messages, { sessionId: agent.id, retryNote }))
     if (!outcome.ok) {
