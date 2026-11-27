@@ -18,6 +18,10 @@ import type { FailureRecord } from './signals.js'
 export interface Outcome {
   readonly ok: boolean
   readonly failure?: FailureRecord
+  /** 工具名+规范化参数 key（打转检测用；成功调用也要，缺省不参与打转计数） */
+  readonly argsKey?: string
+  /** 成功的写文件类调用（write/edit）：推进度的证据，重置打转计数 */
+  readonly write?: boolean
 }
 
 export type StuckMode = 'stuck' | 'struggling'
@@ -28,6 +32,11 @@ export interface TriggerDecision {
   readonly mode: StuckMode | undefined
   /** fired 时给顾问看的近期失败记录（窗口内全部失败） */
   readonly failures: readonly FailureRecord[]
+  /** 触发来源：failure=失败计数；loop=打转检测（成功的原地打转，v0.4.0） */
+  readonly kind: 'failure' | 'loop'
+  /** kind=loop 时：打转的调用签名与次数 */
+  readonly loopKey?: string
+  readonly loopCount?: number
 }
 
 export class Trigger {
@@ -37,6 +46,8 @@ export class Trigger {
   private interventionsLeft: number
   private totalSteps = 0
   private lastFireStep = -1
+  /** 打转检测：自上次成功写文件以来各调用签名的重复次数 */
+  private sinceWrite = new Map<string, number>()
 
   constructor(private readonly cfg: TriggerConfig) {
     this.interventionsLeft = Math.max(0, cfg.maxInterventions)
@@ -76,12 +87,39 @@ export class Trigger {
     }
     for (const outcome of outcomes) pushOutcome(outcome)
 
-    const noDecision: TriggerDecision = { fired: false, mode: undefined, failures: [] }
+    // 打转计数：成功写文件 = 进度证据，清零；其余带签名的调用累计重复次数
+    for (const outcome of outcomes) {
+      if (outcome.write === true && outcome.ok) {
+        this.sinceWrite.clear()
+      } else if (outcome.argsKey !== undefined) {
+        this.sinceWrite.set(outcome.argsKey, (this.sinceWrite.get(outcome.argsKey) ?? 0) + 1)
+      }
+    }
+
+    const noDecision: TriggerDecision = { fired: false, mode: undefined, failures: [], kind: 'failure' }
     if (this.interventionsLeft <= 0) return noDecision
 
     const sinceFire = this.totalSteps - this.lastFireStep
     const cooled = this.lastFireStep < 0 || sinceFire > this.cfg.cooldown
     if (!cooled) return noDecision
+
+    // 打转 fire：同一签名重复到阈值（成功的原地打转，失败路径管不着）
+    if (this.cfg.loopRepeat > 0) {
+      let worstKey: string | undefined
+      let worstCount = 0
+      for (const [key, count] of this.sinceWrite) {
+        if (count > worstCount) { worstCount = count; worstKey = key }
+      }
+      if (worstKey !== undefined && worstCount >= this.cfg.loopRepeat) {
+        this.consecutive = 0
+        this.window = []
+        this.windowFailures = []
+        this.sinceWrite.clear()
+        this.interventionsLeft -= 1
+        this.lastFireStep = this.totalSteps
+        return { fired: true, mode: undefined, failures: [], kind: 'loop', loopKey: worstKey, loopCount: worstCount }
+      }
+    }
 
     const consecutiveHit = this.consecutive >= this.cfg.consecutive
     const windowHit = this.windowFailures.length >= this.cfg.windowFires
@@ -98,7 +136,8 @@ export class Trigger {
     this.windowFailures = []
     this.interventionsLeft -= 1
     this.lastFireStep = this.totalSteps
-    return { fired: true, mode, failures }
+    this.sinceWrite.clear()
+    return { fired: true, mode, failures, kind: 'failure' }
   }
 
   private dropFailure(target: FailureRecord): void {

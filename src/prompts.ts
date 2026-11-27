@@ -31,6 +31,8 @@ export interface PromptSet {
   readonly planNudgeEvery: string
   /** 卡点自动介入问题 */
   readonly followupNudge: string
+  /** 打转介入问题（成功的原地打转，v0.4.0） */
+  readonly loopNudge: string
   /** consult 预算耗尽提示 */
   readonly budgetExhausted: string
   /** 顾问不可用兜底建议 */
@@ -106,6 +108,14 @@ const EN: PromptSet = {
     'CONTINUE if the failures look like normal iteration, ADJUST with a concrete',
     'redirect if a change of approach is needed, STOP only if the task should be',
     'handed to the user.',
+  ].join(' '),
+
+  loopNudge: [
+    'The executor is going in CIRCLES without errors: it repeated the exact same',
+    'tool call several times with no file writes in between — classic sign of being',
+    'lost without realizing it. Diagnose why the repetition is not making progress,',
+    'and reply per the contract: CONTINUE only if the repetition is legitimate',
+    'iteration, otherwise ADJUST with a concrete redirect.',
   ].join(' '),
 
   budgetExhausted: [
@@ -199,6 +209,12 @@ const ZH: PromptSet = {
     '阅读上下文中的近期失败，诊断可能的原因，按契约回复：',
     '失败看起来像正常迭代 → CONTINUE；需要换打法 → ADJUST 并给出具体转向；',
     '只有任务应交回给用户时才用 STOP。',
+  ].join(' '),
+
+  loopNudge: [
+    '执行者在原地打转但没有报错：同一个工具调用原样重复了多次，期间没有任何',
+    '成功的文件写入——这是"自己意识不到迷路"的典型症状。诊断为什么重复没有',
+    '推进度，按契约回复：重复确属正常迭代才 CONTINUE，否则 ADJUST 给出具体转向。',
   ].join(' '),
 
   budgetExhausted: [

@@ -30,8 +30,10 @@ export async function runOpeningPlan(
   const state = registry.for(agent)
   const config = registry.currentConfig()
   if (!config.enabled || !config.plan) return
-  const selection = registry.selection(state)
-  if (selection === undefined) return
+  const base = registry.selection(state)
+  if (base === undefined) return
+  // v0.4.0 顾问分层：plan 是低风险轻量产出，允许独立降档省成本
+  const selection = config.planEffort !== '' ? { ...base, effort: config.planEffort } : base
   const ps = pickPrompts(config.promptLanguage)
   const nudge = config.planMode === 'every' ? ps.planNudgeEvery : ps.planNudge
   try {

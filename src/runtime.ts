@@ -21,7 +21,7 @@ import { selectionLabel, type AdvisorSelection } from './config.js'
 import type { Config } from './config-types.js'
 import { Trigger, type TriggerDecision } from './trigger.js'
 import { AdmissionGate, describeSuppression } from './guards.js'
-import { describeFailure, type FailureRecord } from './signals.js'
+import { describeFailure, headTailSample, type FailureRecord } from './signals.js'
 import { callAdvisor, resolveAdvisorReply } from './advisor.js'
 import { pickPrompts } from './prompts.js'
 import { snapshotFor } from './history.js'
@@ -134,10 +134,22 @@ export function flushPendingAdvice(agent: Agent, state: AgentRuntime): number {
   return flushed
 }
 
-export function failuresBlock(failures: readonly FailureRecord[]): string {
+export function failuresBlock(failures: readonly FailureRecord[], maxFailureChars = 1500): string {
   if (failures.length === 0) return ''
-  const lines = failures.map(f => `- ${describeFailure(f)}`).join('\n')
+  const lines = failures.map(f => {
+    const head = `- ${describeFailure(f)}`
+    // v0.4.0：顾问需要看到真实报错原文才能诊断，不只是类别标签
+    if (f.evidence === undefined || maxFailureChars <= 0) return head
+    const sampled = headTailSample(f.evidence, maxFailureChars).replace(/\n/g, '\n  ')
+    return head + '\n  evidence: `' + sampled + '`'
+  }).join('\n')
   return `\n\nRecent failures (the likely stuck loop):\n${lines}`
+}
+
+/** 打转现场进顾问问题段（v0.4.0：成功的原地打转，没有失败证据可附） */
+export function loopBlock(loopKey: string, loopCount: number): string {
+  const readable = loopKey.length > 300 ? loopKey.slice(0, 300) + '…' : loopKey
+  return `\n\nLoop detected: the executor repeated the exact same tool call ${loopCount} times without any successful file write in between:\n  ${readable.replace(/\n/g, ' ')}`
 }
 
 /**
@@ -166,7 +178,10 @@ export async function runFollowup(
     }
     // 预算随行（Anthropic 技巧，设计 §1）+ 压制回执（设计 §5：换措辞绕闸无意义）
     const ps = pickPrompts(config.promptLanguage)
-    const pieces = [ps.followupNudge + failuresBlock(decision.failures)]
+    const scene = decision.kind === 'loop' && decision.loopKey !== undefined && decision.loopCount !== undefined
+      ? ps.loopNudge + loopBlock(decision.loopKey, decision.loopCount)
+      : ps.followupNudge + failuresBlock(decision.failures, config.context.maxFailureChars)
+    const pieces = [scene]
     if (state.lastSuppression !== undefined) {
       pieces.push(`\n\nReceipt for your previous advice: the admission gate suppressed it — ${state.lastSuppression}. Only resubmit advice that is materially different or at strictly higher severity.`)
     }
@@ -206,7 +221,7 @@ export async function runFollowup(
       queueAdvice(state, { kind: 'ADJUST', text, summary })
     }
     state.lastSuppression = undefined
-    await appendAudit({ time: new Date().toISOString(), session: agent.id, kind: 'followup', advisor: selectionLabel(selection), verdict: reply.kind, severity: reply.severity, delivered, queued: !delivered,
+    await appendAudit({ time: new Date().toISOString(), session: agent.id, kind: 'followup', triggerKind: decision.kind, advisor: selectionLabel(selection), verdict: reply.kind, severity: reply.severity, delivered, queued: !delivered,
       parseRetries: reply.parseRetries, fellBack: reply.fellBack, detail: reply.detail.slice(0, 400), ...usage })
     return delivered
   } catch (error) {

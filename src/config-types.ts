@@ -18,6 +18,8 @@ export type TriggerConfig = {
   windowFires: number
   cooldown: number
   maxInterventions: number
+  /** 打转检测：同一 (工具+参数) 调用在上次成功写文件后重复此次数即视为打转（0=关闭） */
+  loopRepeat: number
 }
 
 export type GuardConfig = {
@@ -44,6 +46,10 @@ export type ContextConfig = {
   recentMessages: number
   /** 单块文本字符预算 */
   blockChars: number
+  /** 每条失败证据进顾问载荷的字符预算（v0.4.0 失败证据全文） */
+  maxFailureChars: number
+  /** 中段显著性节字符预算（窗口外用户消息等关键事件；0=关闭，v0.4.0） */
+  maxSalientChars: number
 }
 
 export type Config = {
@@ -59,4 +65,7 @@ export type Config = {
   advisorProvider: string
   advisorModel: string
   advisorEffort: string
+  /** 开场计划专用推理强度（v0.4.0 顾问分层：plan 实测又短又套路，用低档位省钱；
+   *  '' = 跟随 advisorEffort） */
+  planEffort: string
 }

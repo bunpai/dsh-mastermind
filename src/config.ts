@@ -19,12 +19,13 @@ export const DEFAULT_CONFIG: Config = {
   followup: true,
   consult: true,
   promptLanguage: 'zh',
-  trigger: { consecutive: 3, windowSize: 10, windowFires: 4, cooldown: 0, maxInterventions: 3 },
+  trigger: { consecutive: 3, windowSize: 10, windowFires: 4, cooldown: 0, maxInterventions: 3, loopRepeat: 3 },
   guards: { budgetPerTurn: 4, budgetCap: 32, immunityTurns: 3 },
-  context: { maxSummaryChars: 6000, maxPayloadChars: 12000, taskBudgetWithSummary: 800, recentMessages: 20, blockChars: 700 },
+  context: { maxSummaryChars: 6000, maxPayloadChars: 12000, taskBudgetWithSummary: 800, recentMessages: 20, blockChars: 700, maxFailureChars: 1500, maxSalientChars: 1500 },
   advisorProvider: '',
   advisorModel: '',
   advisorEffort: '',
+  planEffort: '',
 }
 
 /** 已显式配置的顾问路由；undefined = 未指定（回落会话当前执行模型） */

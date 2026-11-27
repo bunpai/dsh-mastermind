@@ -19,7 +19,7 @@ import type { Config } from './config-types.js'
 import { composeConfig, readUserConfigSync } from './user-config.js'
 import { maskToLiteralPatch, readPatchLockedPaths } from './patch-locks.js'
 import { wireAdvisorApi } from './api.js'
-import { resultIsFailure, classifyFailure } from './signals.js'
+import { resultIsFailure, classifyFailure, makeArgsKey } from './signals.js'
 import { CONSULT_TOOL_NAME, pickPrompts } from './prompts.js'
 import { RuntimeRegistry, flushPendingAdvice, runFollowup } from './runtime.js'
 import { runOpeningPlan } from './plan.js'
@@ -119,9 +119,17 @@ export function apply(ctx: Context, config: Config) {
       // 防级联③：顾问 consult 自己的结果不计数
       if (exec.name === CONSULT_TOOL_NAME) return
       const failed = resultIsFailure(result)
-      const record = failed ? classifyFailure(exec.name, typeof exec.arguments === 'string' ? exec.arguments : '', result) : undefined
+      const argsText = typeof exec.arguments === 'string' ? exec.arguments : ''
+      const record = failed ? classifyFailure(exec.name, argsText, result) : undefined
+      // 打转检测原料：所有调用带签名；write/edit 成功 = 进度证据
+      const isWriteTool = exec.name === 'write' || exec.name === 'edit'
       const decision = rtScoped.trigger.update([
-        { ok: !failed, ...(record === undefined ? {} : { failure: record }) },
+        {
+          ok: !failed,
+          ...(record === undefined ? {} : { failure: record }),
+          argsKey: makeArgsKey(exec.name, argsText),
+          ...(isWriteTool ? { write: true } : {}),
+        },
       ])
       if (decision.fired) void runFollowup(ctx, agentScoped, registry, decision)
     } catch (error) {

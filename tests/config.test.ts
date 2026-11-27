@@ -3,7 +3,7 @@ import { DEFAULT_CONFIG, mergeConfig, resolveAdvisorSelection, selectionLabel } 
 
 describe('config 旋钮（设计 §2/§7）', () => {
   it('DEFAULT_CONFIG：QwenPaw 默认阈值精确', () => {
-    expect(DEFAULT_CONFIG.trigger).toEqual({ consecutive: 3, windowSize: 10, windowFires: 4, cooldown: 0, maxInterventions: 3 })
+    expect(DEFAULT_CONFIG.trigger).toEqual({ consecutive: 3, windowSize: 10, windowFires: 4, cooldown: 0, maxInterventions: 3, loopRepeat: 3 })
     expect(DEFAULT_CONFIG.guards).toEqual({ budgetPerTurn: 4, budgetCap: 32, immunityTurns: 3 })
     expect(DEFAULT_CONFIG.plan).toBe(true)
     expect(DEFAULT_CONFIG.followup).toBe(true)

@@ -23,12 +23,14 @@ export interface FailureRecord {
   readonly argsKey: string
   /** 失败类别 */
   readonly label: FailureLabel
+  /** 失败证据原文采样（头60%+尾30%，v0.4.0：军师只看 label 看不到真实报错） */
+  readonly evidence?: string
 }
 
 /** 从 result 任意形态里尽量抽出可读文本（bounded，防超长日志进窗口） */
 export function extractResultText(result: unknown, budget = 2000): string {
   if (result === null || result === undefined) return ''
-  if (typeof result === 'string') return result.slice(0, budget)
+  if (typeof result === 'string') return headTailSample(result, budget)
   if (typeof result !== 'object') return String(result).slice(0, budget)
   const parts: string[] = []
   const push = (text: string): void => {
@@ -50,7 +52,7 @@ export function extractResultText(result: unknown, budget = 2000): string {
       }
     }
   }
-  return parts.join('\n').slice(0, budget)
+  return headTailSample(parts.join('\n'), budget)
 }
 
 /** 键排序的稳定序列化（argsKey 用：相同语义参数不同键序 → 同 key） */
@@ -100,7 +102,7 @@ const SANDBOX_TEXT = /\[sandbox:|file access denied|access denied under/i
  * resultText 是渲染文本或原始对象的抽取。
  * 只在 ok === false 的前提下调它（成败以 result.isError === true 为准）。
  */
-export function classifyFailure(name: string, argsText: string, result: unknown): FailureRecord {
+function classifyFailureInner(name: string, argsText: string, result: unknown): FailureRecord {
   const resultText = extractResultText(result)
   const meta = typeof result === 'object' && result !== null
     ? structuralMeta(result as Record<string, unknown>)
@@ -137,6 +139,22 @@ export function classifyFailure(name: string, argsText: string, result: unknown)
   return { name, argsKey: makeArgsKey(name, argsText), label: 'generic' }
 }
 
+/** 头60%+尾30%双端采样（与 history.ts 渲染同向，错误的关键行通常在头尾） */
+export function headTailSample(text: string, budget: number): string {
+  if (text.length <= budget) return text
+  // 先构造标记再分配剩余预算，保证总长严格不超 budget
+  const droppedApprox = text.length - Math.floor(budget * 0.6)
+  const marker = '\n…[middle ' + droppedApprox + ' chars dropped]…\n'
+  const avail = budget - marker.length
+  if (avail <= 20) return text.slice(0, budget)
+  const head = Math.floor(avail * 0.6)
+  const tail = avail - head
+  return text.slice(0, head) + marker + text.slice(-tail)
+}
+
+/** 失败证据采样预算（分类期固定捕捉，渲染期按 context.maxFailureChars 再裁） */
+export const EVIDENCE_CAPTURE_CHARS = 2400
+
 /** 进顾问提示词的失败摘要行（label 人话化） */
 export function describeFailure(record: FailureRecord): string {
   const table: Record<FailureLabel, string> = {
@@ -166,6 +184,14 @@ function exitCodeHaystack(result: unknown, depth = 0): string {
   }
   walk(result, depth)
   return chunks.join(' ')
+}
+
+/** 失败分类主入口（包装内层，统一补证据采样——军师看得到真实报错原文而不只是 label） */
+export function classifyFailure(name: string, argsText: string, result: unknown): FailureRecord {
+  const record = classifyFailureInner(name, argsText, result)
+  const text = extractResultText(result, EVIDENCE_CAPTURE_CHARS * 2)
+  if (text.trim() === '') return record
+  return { ...record, evidence: headTailSample(text, EVIDENCE_CAPTURE_CHARS) }
 }
 
 /** tools/result 是否算一次失败：isError === true，或文本含非零 [exit code: N]

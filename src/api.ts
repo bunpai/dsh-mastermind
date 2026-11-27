@@ -66,7 +66,7 @@ async function modelCatalog(ctx: Context): Promise<ModelCatalog> {
 }
 
 const BOOL_KEYS = ['enabled', 'plan', 'followup', 'consult'] as const
-const ROUTE_KEYS = ['advisorProvider', 'advisorModel', 'advisorEffort'] as const
+const ROUTE_KEYS = ['advisorProvider', 'advisorModel', 'advisorEffort', 'planEffort'] as const
 const TRIGGER_BOUNDS: Record<string, [number, number]> = { consecutive: [1, 10], windowSize: [2, 50], windowFires: [1, 20], cooldown: [0, 20], maxInterventions: [0, 10] }
 const GUARD_BOUNDS: Record<string, [number, number]> = { budgetPerTurn: [1, 16], budgetCap: [1, 128], immunityTurns: [0, 10] }
 const CONTEXT_BOUNDS: Record<string, [number, number]> = { maxSummaryChars: [500, 20000], maxPayloadChars: [2000, 60000], taskBudgetWithSummary: [200, 4000], recentMessages: [4, 60], blockChars: [200, 4000] }
