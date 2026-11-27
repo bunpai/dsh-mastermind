@@ -198,6 +198,9 @@ export function renderSalient(messages: readonly Message[], recent: number, cap:
     const kind = sourceKind(message)
     if (kind !== undefined && kind.startsWith('plugin:')) continue
     if (kind === 'compact-checkpoint') continue
+    // 只认真实用户发言：工具结果等伪装成 user 角色的内容若混入，
+    // 会把真正的纠正挤出尾优先截断窗（offline-features 实证事故）
+    if (kind !== undefined && kind !== 'user') continue
     if (!firstUserSkipped) {
       // 第一条真实用户消息 = 任务原文，已在 task 节，不重复
       firstUserSkipped = true
